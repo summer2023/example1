@@ -7,38 +7,29 @@ import javax.persistence.*;
 @Entity
 public class Inventory {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long productId;
     private Integer count;
+    private Integer lockedCount;
 
     @OneToOne(targetEntity = Product.class)
-    @JoinColumn(name = "productId", insertable = false, updatable = false)
+    @JoinColumn(name = "id", insertable = false, updatable = false)
     private Product product;
 
     public Inventory() {
     }
 
-    public Inventory(Long id, Long productId, Integer count) {
+    public Inventory(Long id, Integer count, Integer lockedCount) {
         this.id = id;
-        this.productId = productId;
         this.count = count;
+        this.lockedCount = lockedCount;
     }
 
-//    public Long getId() {
-//        return id;
-//    }
+    public Long getId() {
+        return id;
+    }
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public Long getProductId() {
-        return productId;
-    }
-
-    public void setProductId(Long productId) {
-        this.productId = productId;
     }
 
     public Integer getCount() {
@@ -49,4 +40,11 @@ public class Inventory {
         this.count = count;
     }
 
+    public Integer getLockedCount() {
+        return lockedCount;
+    }
+
+    public void setLockedCount(Integer lockedCount) {
+        this.lockedCount = lockedCount;
+    }
 }
