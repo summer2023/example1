@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.sql.Date;
 import java.util.List;
 
 @RestController
@@ -33,16 +34,33 @@ public class OrderController {
     public ResponseEntity<?> saveOrder(@RequestBody List<OrderMsg> orderMsg) {
         UserOrder order = new UserOrder();
         Long orderId = orderRepository.saveAndFlush(order).getId();
-        ResponseEntity<String> result = createProductSnaps(orderMsg, orderId);
-        if (result != null){
-            return result;
+        String result = createProductSnaps(orderMsg, orderId);
+        if (!result.equals("success")) {
+            return new ResponseEntity<>(result, HttpStatus.BAD_REQUEST);
         }
+        HttpHeaders responseHeaders = setLocationInHeaders(orderId);
         order.setTotalPrice(countTotalPrice(orderId));
-        URI location = URI.create("http://192.168.56.1:8083/orders/" + orderId);
-        HttpHeaders responseHeaders = new HttpHeaders();
-        responseHeaders.setLocation(location);
         orderRepository.save(order);
+        lockInventories(orderMsg);
         return new ResponseEntity<UserOrder>(orderRepository.findUserOrderById(orderId), responseHeaders, HttpStatus.CREATED);
+
+    }
+
+    //修改订单状态
+    @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
+    public ResponseEntity<?> updateOrderStatus(@PathVariable Long id, @RequestParam(value = "orderStatus", required = false, defaultValue = "unPaid") String orderStatus) {
+        UserOrder order = orderRepository.findUserOrderById(id);
+        String nowDate = String.valueOf(new Date(System.currentTimeMillis()));
+        if (order == null) {
+            return new ResponseEntity<String>("Cannot find such order with input orderId.", HttpStatus.NOT_FOUND);
+        } else {
+            if (orderStatus.equals("paid")) {
+                orderRepository.updateOrderStatus(id, orderStatus, nowDate, "");
+            } else if (orderStatus.equals("withDrawn")) {
+                orderRepository.updateOrderStatus(id, orderStatus, "", nowDate);
+            }
+            return new ResponseEntity<UserOrder>(orderRepository.findUserOrderById(id), HttpStatus.NO_CONTENT);
+        }
     }
 
     //根据订单id查找订单
@@ -51,24 +69,32 @@ public class OrderController {
         UserOrder order = orderRepository.findUserOrderById(id);
         if (order == null) {
             return new ResponseEntity<String>("Cannot find such product with input id: " + id, HttpStatus.NOT_FOUND);
+        } else {
+            return new ResponseEntity<UserOrder>(order, HttpStatus.OK);
         }
-        return new ResponseEntity<UserOrder>(order, HttpStatus.OK);
     }
 
-    private ResponseEntity<String> createProductSnaps(List<OrderMsg> orderMsg, Long orderId) {
+    private HttpHeaders setLocationInHeaders(Long orderId) {
+        URI location = URI.create("http://192.168.56.1:8083/orders/" + orderId);
+        HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.setLocation(location);
+        return responseHeaders;
+    }
+
+    private String createProductSnaps(List<OrderMsg> orderMsg, Long orderId) {
         for (OrderMsg msg : orderMsg) {
             Product product = productRepository.findProductById(msg.getProductId());
             if (product == null) {
-                return new ResponseEntity<>("Cannot find such product with input id: " + msg.getProductId(), HttpStatus.BAD_REQUEST);
+                return "Cannot find such product with input id: " + msg.getProductId();
             }
             Inventory inventory = inventoryRepository.findInventoryById(msg.getProductId());
             if (inventory.getCount() - inventory.getLockedCount() < msg.getPurchaseCount()) {
-                return new ResponseEntity<>("There is insufficient inventory for the item which id is: " + msg.getProductId(), HttpStatus.BAD_REQUEST);
+                return "There is insufficient inventory for the item which id is: " + msg.getProductId();
             }
             ProductSnap productSnap = new ProductSnap(product.getId(), orderId, product.getName(), product.getDescription(), String.valueOf(product.getPrice()), msg.getPurchaseCount());
             productSnapRepository.save(productSnap);
         }
-        return null;
+        return "success";
     }
 
     private String countTotalPrice(Long orderId) {
@@ -80,7 +106,9 @@ public class OrderController {
         return String.valueOf(totalPrice);
     }
 
-    private void lockInventories(List<OrderMsg> orderMsg){
-
+    private void lockInventories(List<OrderMsg> orderMsg) {
+        for (OrderMsg msg : orderMsg) {
+            inventoryRepository.updateLockedCount(msg.getProductId(), msg.getPurchaseCount());
+        }
     }
 }

@@ -61,6 +61,9 @@ public class UserOrder {
 
     public void setStatus(String status) {
         this.status = status;
+        if (status == "paid"){
+            this.paidTime = String.valueOf(new Date(System.currentTimeMillis()));
+        }
     }
 
     public String getCreateTime() {
