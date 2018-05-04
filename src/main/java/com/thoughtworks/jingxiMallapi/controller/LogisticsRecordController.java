@@ -52,19 +52,35 @@ public class LogisticsRecordController {
             if (logisticsRecord.getLogisticsStatus().equals("shipping") || logisticsRecord.getLogisticsStatus().equals("signed")) {
                 return new ResponseEntity<>("The logisticsRecord which id is " + id + " is in the state of: " + logisticsRecord.getLogisticsStatus(), HttpStatus.BAD_REQUEST);
             }
-            logisticsRecordRepository.updateLogisticsStatusWithShipping(id, orderId, nowDate);
         } else if (logisticsStatus.equals("signed")) {
-            if (logisticsRecord.getLogisticsStatus().equals("readyToShip")) {
-                return new ResponseEntity<>("The logisticsRecord hasn't been shipped yet.", HttpStatus.BAD_REQUEST);
+            String result = checkWhetherCanSignLogistics(logisticsRecord);
+            if (!result.equals("success")) {
+                return new ResponseEntity<>(result, HttpStatus.BAD_REQUEST);
             }
-            if (logisticsRecord.getLogisticsStatus().equals("signed")) {
-                return new ResponseEntity<>("The logisticsRecord has already been signed off.", HttpStatus.BAD_REQUEST);
-            }
-            logisticsRecordRepository.updateLogisticsStatusWithSigned(id, orderId, nowDate);
             orderRepository.updateOrderStatusToFinished(orderId, "finished", nowDate);
             updateInventoriesAfterSignedOff(orderId);
         }
+        updateLogisticsStatus(logisticsStatus,id, orderId, nowDate);
         return new ResponseEntity<>("success", HttpStatus.NO_CONTENT);
+    }
+
+    private void updateLogisticsStatus(String logisticsStatus, Long id, Long orderId, String nowDate) {
+        if (logisticsStatus.equals("shipping")) {
+            logisticsRecordRepository.updateLogisticsStatusWithShipping(id, orderId, nowDate);
+        } else if (logisticsStatus.equals("signed")) {
+            logisticsRecordRepository.updateLogisticsStatusWithSigned(id, orderId, nowDate);
+        }
+
+    }
+
+    private String checkWhetherCanSignLogistics(LogisticsRecord logisticsRecord) {
+        if (logisticsRecord.getLogisticsStatus().equals("readyToShip")) {
+            return "The logisticsRecord hasn't been shipped yet.";
+        }
+        if (logisticsRecord.getLogisticsStatus().equals("signed")) {
+            return "The logisticsRecord has already been signed off.";
+        }
+        return "success";
     }
 
     private void updateInventoriesAfterSignedOff(Long orderId) {
