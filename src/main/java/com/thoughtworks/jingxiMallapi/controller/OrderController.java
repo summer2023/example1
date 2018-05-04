@@ -50,24 +50,24 @@ public class OrderController {
     @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
     public ResponseEntity<?> updateOrderStatus(@PathVariable Long id, @RequestParam(value = "orderStatus", required = false, defaultValue = "unPaid") String orderStatus) {
         UserOrder order = orderRepository.findUserOrderById(id);
-
         if (order == null) {
             return new ResponseEntity<String>("Cannot find such order with input orderId.", HttpStatus.NOT_FOUND);
         }
-
+        if (!isThisOrderAlreadyBeenPaidOrWithdrawnOrFinished(order, orderStatus)) {
+            return new ResponseEntity<String>("The order which id is " + id + " has already been " + order.getStatus(), HttpStatus.BAD_REQUEST);
+        }
         if (orderStatus.equals("paid")) {
-            if (order.getStatus().equals("paid") || order.getStatus().equals("withdrawn") || order.getStatus().equals("finished")) {
-                return new ResponseEntity<String>("The order which id is " + id + " has already been " + order.getStatus(), HttpStatus.BAD_REQUEST);
-            }
             createLogisticsRecord(id);
         } else if (orderStatus.equals("withdrawn")) {
-            if (order.getStatus().equals("paid") || order.getStatus().equals("withdrawn") || order.getStatus().equals("finished")) {
-                return new ResponseEntity<String>("The order which id is " + id + " has already been " + order.getStatus(), HttpStatus.BAD_REQUEST);
-            }
             unlockInventoriesByOrderId(id);
         }
         updateOrderStatusByInputState(id, orderStatus);
         return new ResponseEntity<UserOrder>(orderRepository.findUserOrderById(id), HttpStatus.NO_CONTENT);
+    }
+
+    private Boolean isThisOrderAlreadyBeenPaidOrWithdrawnOrFinished(UserOrder order, String orderStatus) {
+        final boolean isBeenPaidOrWithdrawnOrFinished = order.getStatus().equals("paid") || order.getStatus().equals("withdrawn") || order.getStatus().equals("finished");
+        return (!orderStatus.equals("paid") || !isBeenPaidOrWithdrawnOrFinished) && (!orderStatus.equals("withdrawn") || !isBeenPaidOrWithdrawnOrFinished);
     }
 
     private void updateOrderStatusByInputState(Long id, String orderStatus) {
