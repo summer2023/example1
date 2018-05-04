@@ -36,7 +36,8 @@ public class OrderController {
         Long orderId = orderRepository.saveAndFlush(order).getId();
         String result = createProductSnaps(orderMsg, orderId);
         if (!result.equals("success")) {
-            return new ResponseEntity<>(result, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<String>(result, HttpStatus.BAD_REQUEST);
+
         }
         HttpHeaders responseHeaders = setLocationInHeaders(orderId);
         order.setTotalPrice(countTotalPrice(orderId));
@@ -53,14 +54,17 @@ public class OrderController {
         String nowDate = String.valueOf(new Date(System.currentTimeMillis()));
         if (order == null) {
             return new ResponseEntity<String>("Cannot find such order with input orderId.", HttpStatus.NOT_FOUND);
-        } else {
-            if (orderStatus.equals("paid")) {
-                orderRepository.updateOrderStatus(id, orderStatus, nowDate, "");
-            } else if (orderStatus.equals("withDrawn")) {
-                orderRepository.updateOrderStatus(id, orderStatus, "", nowDate);
-            }
-            return new ResponseEntity<UserOrder>(orderRepository.findUserOrderById(id), HttpStatus.NO_CONTENT);
         }
+        if (order.getStatus().equals("paid") || order.getStatus().equals("withDrawn")) {
+            return new ResponseEntity<String>("The order which id is " + id + " has already been " + order.getStatus(), HttpStatus.BAD_REQUEST);
+        }
+        if (orderStatus.equals("paid")) {
+            orderRepository.updateOrderStatus(id, orderStatus, nowDate, "");
+        } else if (orderStatus.equals("withDrawn")) {
+            orderRepository.updateOrderStatus(id, orderStatus, "", nowDate);
+            unlockInventoriesByOrderId(id);
+        }
+        return new ResponseEntity<UserOrder>(orderRepository.findUserOrderById(id), HttpStatus.NO_CONTENT);
     }
 
     //根据订单id查找订单
@@ -72,6 +76,11 @@ public class OrderController {
         } else {
             return new ResponseEntity<UserOrder>(order, HttpStatus.OK);
         }
+    }
+
+    @RequestMapping(method = RequestMethod.GET)
+    public List<UserOrder> getUserOrders(@RequestParam Long userId) {
+        return orderRepository.findByUserId(userId);
     }
 
     private HttpHeaders setLocationInHeaders(Long orderId) {
@@ -109,6 +118,20 @@ public class OrderController {
     private void lockInventories(List<OrderMsg> orderMsg) {
         for (OrderMsg msg : orderMsg) {
             inventoryRepository.updateLockedCount(msg.getProductId(), msg.getPurchaseCount());
+        }
+    }
+
+    private void updateInventoriesAfterPaid(Long orderId) {
+        List<ProductSnap> products = productSnapRepository.findProductSnapByOrderId(orderId);
+        for (ProductSnap product : products) {
+            inventoryRepository.updateCountById(product.getId(), -product.getPurchaseCount());
+        }
+    }
+
+    private void unlockInventoriesByOrderId(Long orderId) {
+        List<ProductSnap> products = productSnapRepository.findProductSnapByOrderId(orderId);
+        for (ProductSnap product : products) {
+            inventoryRepository.updateLockedCount(product.getId(), -product.getPurchaseCount());
         }
     }
 }

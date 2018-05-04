@@ -1,5 +1,5 @@
 ﻿# Host: 192.168.99.100  (Version 5.7.21)
-# Date: 2018-05-04 01:43:34
+# Date: 2018-05-04 16:45:57
 # Generator: MySQL-Front 6.0  (Build 2.20)
 
 
@@ -19,6 +19,24 @@ CREATE TABLE `Inventory` (
 #
 
 INSERT INTO `Inventory` VALUES (1,113,107),(2,30,0),(3,100,0),(4,100,85);
+
+#
+# Structure for table "LogisticsRecord"
+#
+
+CREATE TABLE `LogisticsRecord` (
+  `id` int(10) NOT NULL DEFAULT '0',
+  `logisticsStatus` varchar(20) NOT NULL DEFAULT '',
+  `outboundTime` varchar(40) NOT NULL DEFAULT 'null',
+  `signedTime` varchar(40) NOT NULL DEFAULT 'null',
+  `deliveryMan` varchar(30) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=gbk;
+
+#
+# Data for table "LogisticsRecord"
+#
+
 
 #
 # Structure for table "Product"
@@ -51,12 +69,11 @@ CREATE TABLE `ProductSnap` (
   `purchasePrice` varchar(40) NOT NULL DEFAULT '',
   `purchaseCount` int(10) NOT NULL DEFAULT '0',
   PRIMARY KEY (`snapId`)
-) ENGINE=InnoDB  DEFAULT CHARSET=gbk;
+) ENGINE=InnoDB DEFAULT CHARSET=gbk;
 
 #
 # Data for table "ProductSnap"
 #
-
 
 
 #
@@ -78,5 +95,4 @@ CREATE TABLE `UserOrder` (
 #
 # Data for table "UserOrder"
 #
-
 
