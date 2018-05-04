@@ -1,5 +1,5 @@
 ﻿# Host: 192.168.99.100  (Version 5.7.21)
-# Date: 2018-05-04 16:45:57
+# Date: 2018-05-04 18:09:18
 # Generator: MySQL-Front 6.0  (Build 2.20)
 
 
@@ -25,7 +25,8 @@ INSERT INTO `Inventory` VALUES (1,113,107),(2,30,0),(3,100,0),(4,100,85);
 #
 
 CREATE TABLE `LogisticsRecord` (
-  `id` int(10) NOT NULL DEFAULT '0',
+  `id` int(10) NOT NULL AUTO_INCREMENT,
+  `orderId` int(10) NOT NULL DEFAULT '0',
   `logisticsStatus` varchar(20) NOT NULL DEFAULT '',
   `outboundTime` varchar(40) NOT NULL DEFAULT 'null',
   `signedTime` varchar(40) NOT NULL DEFAULT 'null',

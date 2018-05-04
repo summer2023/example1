@@ -54,14 +54,18 @@ public class OrderController {
         if (order == null) {
             return new ResponseEntity<String>("Cannot find such order with input orderId.", HttpStatus.NOT_FOUND);
         }
-        if (order.getStatus().equals("paid") || order.getStatus().equals("withDrawn")) {
-            return new ResponseEntity<String>("The order which id is " + id + " has already been " + order.getStatus(), HttpStatus.BAD_REQUEST);
-        }
+
         if (orderStatus.equals("paid")) {
+            if (order.getStatus().equals("paid") || order.getStatus().equals("withDrawn") || order.getStatus().equals("finished")) {
+                return new ResponseEntity<String>("The order which id is " + id + " has already been " + order.getStatus(), HttpStatus.BAD_REQUEST);
+            }
             createLogisticsRecord(id);
-            orderRepository.updateOrderStatus(id, orderStatus, nowDate, "");
-        } else if (orderStatus.equals("withDrawn")) {
-            orderRepository.updateOrderStatus(id, orderStatus, "", nowDate);
+            orderRepository.updateOrderStatusWithPaid(id, orderStatus, nowDate);
+        } else if (orderStatus.equals("withdrawn")) {
+            if (order.getStatus().equals("withdrawn") || order.getStatus().equals("finished")) {
+                return new ResponseEntity<String>("The order which id is " + id + " has already been " + order.getStatus(), HttpStatus.BAD_REQUEST);
+            }
+            orderRepository.updateOrderStatusToWithdrawn(id, orderStatus, nowDate);
             unlockInventoriesByOrderId(id);
         }
         return new ResponseEntity<UserOrder>(orderRepository.findUserOrderById(id), HttpStatus.NO_CONTENT);
@@ -135,8 +139,8 @@ public class OrderController {
         }
     }
 
-    private void createLogisticsRecord(Long id) {
-        LogisticsRecord logisticsRecord = new LogisticsRecord(id, "readyToShip");
+    private void createLogisticsRecord(Long orderId) {
+        LogisticsRecord logisticsRecord = new LogisticsRecord(orderId, "readyToShip");
         logisticsRecordRepository.save(logisticsRecord);
     }
 }

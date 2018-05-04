@@ -1,28 +1,27 @@
 package com.thoughtworks.jingxiMallapi.entity;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToOne;
+import javax.persistence.*;
 
 @Entity
 public class LogisticsRecord {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private Long orderId;
     private String logisticsStatus;
     private String outboundTime;
     private String signedTime;
     private String deliveryMan = "李师傅";
 
     @OneToOne(targetEntity = UserOrder.class)
-    @JoinColumn(name = "id", insertable = false, updatable = false)
+    @JoinColumn(name = "orderId", insertable = false, updatable = false)
     private UserOrder userOrder;
 
     public LogisticsRecord() {
     }
 
-    public LogisticsRecord(Long id, String logisticsStatus) {
-        this.id = id;
+    public LogisticsRecord(Long orderId, String logisticsStatus) {
+        this.orderId = orderId;
         this.logisticsStatus = logisticsStatus;
         this.outboundTime = "null";
         this.signedTime = "null";
@@ -35,6 +34,14 @@ public class LogisticsRecord {
     public void setId(Long id) {
         this.id = id;
     }
+
+    public void setOrderId(Long orderId) {
+        this.orderId = orderId;
+    }
+
+//    public Long getOrderId() {
+//        return orderId;
+//    }
 
     public String getLogisticsStatus() {
         return logisticsStatus;
