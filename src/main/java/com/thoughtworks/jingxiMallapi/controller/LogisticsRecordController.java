@@ -20,7 +20,7 @@ public class LogisticsRecordController {
 
     //根据订单id查找订单
     @RequestMapping(value = "/{id}", method = RequestMethod.GET)
-    public ResponseEntity<?> getOrder(@PathVariable Long id) {
+    public ResponseEntity<?> getLogisticsRecord(@PathVariable Long id) {
         LogisticsRecord logisticsRecord = logisticsRecordRepository.findLogisticsRecordById(id);
         if (logisticsRecord == null) {
             return new ResponseEntity<String>("Cannot find such logisticsRecord with input id: " + id, HttpStatus.NOT_FOUND);

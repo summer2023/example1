@@ -14,7 +14,7 @@ public class LogisticsRecord {
     private String signedTime;
     private String deliveryMan = "李师傅";
 
-    @OneToOne(targetEntity = Product.class)
+    @OneToOne(targetEntity = UserOrder.class)
     @JoinColumn(name = "id", insertable = false, updatable = false)
     private UserOrder userOrder;
 
