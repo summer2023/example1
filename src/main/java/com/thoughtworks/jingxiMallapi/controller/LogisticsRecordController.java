@@ -44,11 +44,10 @@ public class LogisticsRecordController {
     public ResponseEntity<String> updateOrderStatus(@PathVariable Long id, @PathVariable Long orderId, @RequestParam String logisticsStatus) {
         LogisticsRecord logisticsRecord = logisticsRecordRepository.findLogisticsRecordByIdAndOrderId(id, orderId);
         String nowDate = String.valueOf(new Date(System.currentTimeMillis()));
-        final boolean isLogisticsAlreadyShippedOrSigned = logisticsRecord.getLogisticsStatus().equals("shipping") || logisticsRecord.getLogisticsStatus().equals("signed");
         if (logisticsRecord == null) {
             return new ResponseEntity<>("Cannot find such logisticsRecord with logisticsId: " + id + "and orderId: " + orderId, HttpStatus.NOT_FOUND);
         }
-
+        final boolean isLogisticsAlreadyShippedOrSigned = logisticsRecord.getLogisticsStatus().equals("shipping") || logisticsRecord.getLogisticsStatus().equals("signed");
         if (logisticsStatus.equals("shipping") && isLogisticsAlreadyShippedOrSigned) {
                 return new ResponseEntity<>("The logisticsRecord which id is " + id + " is in the state of: " + logisticsRecord.getLogisticsStatus(), HttpStatus.BAD_REQUEST);
         } else if (logisticsStatus.equals("signed")) {

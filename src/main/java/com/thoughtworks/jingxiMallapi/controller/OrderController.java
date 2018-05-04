@@ -50,7 +50,7 @@ public class OrderController {
     @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
     public ResponseEntity<?> updateOrderStatus(@PathVariable Long id, @RequestParam(value = "orderStatus", required = false, defaultValue = "unPaid") String orderStatus) {
         UserOrder order = orderRepository.findUserOrderById(id);
-        String nowDate = String.valueOf(new Date(System.currentTimeMillis()));
+
         if (order == null) {
             return new ResponseEntity<String>("Cannot find such order with input orderId.", HttpStatus.NOT_FOUND);
         }
@@ -60,15 +60,23 @@ public class OrderController {
                 return new ResponseEntity<String>("The order which id is " + id + " has already been " + order.getStatus(), HttpStatus.BAD_REQUEST);
             }
             createLogisticsRecord(id);
-            orderRepository.updateOrderStatusWithPaid(id, orderStatus, nowDate);
         } else if (orderStatus.equals("withdrawn")) {
             if (order.getStatus().equals("paid") || order.getStatus().equals("withdrawn") || order.getStatus().equals("finished")) {
                 return new ResponseEntity<String>("The order which id is " + id + " has already been " + order.getStatus(), HttpStatus.BAD_REQUEST);
             }
-            orderRepository.updateOrderStatusToWithdrawn(id, orderStatus, nowDate);
             unlockInventoriesByOrderId(id);
         }
+        updateOrderStatusByInputState(id, orderStatus);
         return new ResponseEntity<UserOrder>(orderRepository.findUserOrderById(id), HttpStatus.NO_CONTENT);
+    }
+
+    private void updateOrderStatusByInputState(Long id, String orderStatus) {
+        String nowDate = String.valueOf(new Date(System.currentTimeMillis()));
+        if (orderStatus.equals("paid")) {
+            orderRepository.updateOrderStatusWithPaid(id, orderStatus, nowDate);
+        } else if (orderStatus.equals("withdrawn")) {
+            orderRepository.updateOrderStatusToWithdrawn(id, orderStatus, nowDate);
+        }
     }
 
     //根据订单id查找订单
