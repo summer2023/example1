@@ -44,24 +44,27 @@ public class LogisticsRecordController {
     public ResponseEntity<String> updateOrderStatus(@PathVariable Long id, @PathVariable Long orderId, @RequestParam String logisticsStatus) {
         LogisticsRecord logisticsRecord = logisticsRecordRepository.findLogisticsRecordByIdAndOrderId(id, orderId);
         String nowDate = String.valueOf(new Date(System.currentTimeMillis()));
+        final boolean isLogisticsAlreadyShippedOrSigned = logisticsRecord.getLogisticsStatus().equals("shipping") || logisticsRecord.getLogisticsStatus().equals("signed");
         if (logisticsRecord == null) {
             return new ResponseEntity<>("Cannot find such logisticsRecord with logisticsId: " + id + "and orderId: " + orderId, HttpStatus.NOT_FOUND);
         }
 
-        if (logisticsStatus.equals("shipping")) {
-            if (logisticsRecord.getLogisticsStatus().equals("shipping") || logisticsRecord.getLogisticsStatus().equals("signed")) {
+        if (logisticsStatus.equals("shipping") && isLogisticsAlreadyShippedOrSigned) {
                 return new ResponseEntity<>("The logisticsRecord which id is " + id + " is in the state of: " + logisticsRecord.getLogisticsStatus(), HttpStatus.BAD_REQUEST);
-            }
         } else if (logisticsStatus.equals("signed")) {
             String result = checkWhetherCanSignLogistics(logisticsRecord);
             if (!result.equals("success")) {
                 return new ResponseEntity<>(result, HttpStatus.BAD_REQUEST);
             }
-            orderRepository.updateOrderStatusToFinished(orderId, "finished", nowDate);
-            updateInventoriesAfterSignedOff(orderId);
+            updateOrderStatusAndInventories(orderId, nowDate);
         }
         updateLogisticsStatus(logisticsStatus,id, orderId, nowDate);
         return new ResponseEntity<>("success", HttpStatus.NO_CONTENT);
+    }
+
+    private void updateOrderStatusAndInventories(Long orderId, String nowDate) {
+        orderRepository.updateOrderStatusToFinished(orderId, "finished", nowDate);
+        updateInventoriesAfterSignedOff(orderId);
     }
 
     private void updateLogisticsStatus(String logisticsStatus, Long id, Long orderId, String nowDate) {
