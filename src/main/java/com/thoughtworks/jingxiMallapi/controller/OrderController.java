@@ -1,10 +1,7 @@
 package com.thoughtworks.jingxiMallapi.controller;
 
 import com.thoughtworks.jingxiMallapi.entity.*;
-import com.thoughtworks.jingxiMallapi.repository.InventoryRepository;
-import com.thoughtworks.jingxiMallapi.repository.OrderRepository;
-import com.thoughtworks.jingxiMallapi.repository.ProductRepository;
-import com.thoughtworks.jingxiMallapi.repository.ProductSnapRepository;
+import com.thoughtworks.jingxiMallapi.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.http.HttpHeaders;
@@ -28,6 +25,8 @@ public class OrderController {
     private ProductRepository productRepository;
     @Autowired
     private InventoryRepository inventoryRepository;
+    @Autowired
+    private LogisticsRecordRepository logisticsRecordRepository;
 
     //创建新商品
     @RequestMapping(method = RequestMethod.POST)
@@ -59,6 +58,7 @@ public class OrderController {
             return new ResponseEntity<String>("The order which id is " + id + " has already been " + order.getStatus(), HttpStatus.BAD_REQUEST);
         }
         if (orderStatus.equals("paid")) {
+            createLogisticsRecord(id);
             orderRepository.updateOrderStatus(id, orderStatus, nowDate, "");
         } else if (orderStatus.equals("withDrawn")) {
             orderRepository.updateOrderStatus(id, orderStatus, "", nowDate);
@@ -133,5 +133,10 @@ public class OrderController {
         for (ProductSnap product : products) {
             inventoryRepository.updateLockedCount(product.getId(), -product.getPurchaseCount());
         }
+    }
+
+    private void createLogisticsRecord(Long id) {
+        LogisticsRecord logisticsRecord = new LogisticsRecord(id, "readyToShip");
+        logisticsRecordRepository.save(logisticsRecord);
     }
 }

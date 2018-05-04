@@ -21,6 +21,9 @@ public class UserOrder {
     @OneToMany(cascade = CascadeType.REMOVE, fetch = FetchType.EAGER, mappedBy = "order")
     private Set<ProductSnap> purchaseItemList = new HashSet<>();
 
+    @OneToOne(cascade = CascadeType.REMOVE, fetch = FetchType.EAGER, mappedBy = "userOrder")
+    private LogisticsRecord logisticsInformation;
+
     public UserOrder() {
         this("0", "unPaid", String.valueOf(new Date(System.currentTimeMillis())), "", "", "", 1L);
     }
@@ -112,5 +115,13 @@ public class UserOrder {
 
     public void setPurchaseItemList(Set<ProductSnap> purchaseItemList) {
         this.purchaseItemList = purchaseItemList;
+    }
+
+    public LogisticsRecord getLogisticsInformation() {
+        return logisticsInformation;
+    }
+
+    public void setLogisticsInformation(LogisticsRecord logisticsInformation) {
+        this.logisticsInformation = logisticsInformation;
     }
 }
