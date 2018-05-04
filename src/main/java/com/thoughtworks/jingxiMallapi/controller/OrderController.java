@@ -56,13 +56,13 @@ public class OrderController {
         }
 
         if (orderStatus.equals("paid")) {
-            if (order.getStatus().equals("paid") || order.getStatus().equals("withDrawn") || order.getStatus().equals("finished")) {
+            if (order.getStatus().equals("paid") || order.getStatus().equals("withdrawn") || order.getStatus().equals("finished")) {
                 return new ResponseEntity<String>("The order which id is " + id + " has already been " + order.getStatus(), HttpStatus.BAD_REQUEST);
             }
             createLogisticsRecord(id);
             orderRepository.updateOrderStatusWithPaid(id, orderStatus, nowDate);
         } else if (orderStatus.equals("withdrawn")) {
-            if (order.getStatus().equals("withdrawn") || order.getStatus().equals("finished")) {
+            if (order.getStatus().equals("paid") || order.getStatus().equals("withdrawn") || order.getStatus().equals("finished")) {
                 return new ResponseEntity<String>("The order which id is " + id + " has already been " + order.getStatus(), HttpStatus.BAD_REQUEST);
             }
             orderRepository.updateOrderStatusToWithdrawn(id, orderStatus, nowDate);
@@ -122,13 +122,6 @@ public class OrderController {
     private void lockInventories(List<OrderMsg> orderMsg) {
         for (OrderMsg msg : orderMsg) {
             inventoryRepository.updateLockedCount(msg.getProductId(), msg.getPurchaseCount());
-        }
-    }
-
-    private void updateInventoriesAfterPaid(Long orderId) {
-        List<ProductSnap> products = productSnapRepository.findProductSnapByOrderId(orderId);
-        for (ProductSnap product : products) {
-            inventoryRepository.updateCountById(product.getId(), -product.getPurchaseCount());
         }
     }
 

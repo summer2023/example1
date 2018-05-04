@@ -1,5 +1,5 @@
 ﻿# Host: 192.168.99.100  (Version 5.7.21)
-# Date: 2018-05-04 18:09:18
+# Date: 2018-05-04 20:54:32
 # Generator: MySQL-Front 6.0  (Build 2.20)
 
 
@@ -18,7 +18,7 @@ CREATE TABLE `Inventory` (
 # Data for table "Inventory"
 #
 
-INSERT INTO `Inventory` VALUES (1,113,107),(2,30,0),(3,100,0),(4,100,85);
+INSERT INTO `Inventory` VALUES (1,113,100),(2,30,5),(3,100,25),(4,100,94);
 
 #
 # Structure for table "LogisticsRecord"
@@ -70,12 +70,13 @@ CREATE TABLE `ProductSnap` (
   `purchasePrice` varchar(40) NOT NULL DEFAULT '',
   `purchaseCount` int(10) NOT NULL DEFAULT '0',
   PRIMARY KEY (`snapId`)
-) ENGINE=InnoDB DEFAULT CHARSET=gbk;
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=gbk;
 
 #
 # Data for table "ProductSnap"
 #
 
+INSERT INTO `ProductSnap` VALUES (1,1,1,'test666','test','1000',3),(2,2,1,'方便面','test','20',1),(3,3,1,'方便面','康师傅','5',5),(4,1,2,'test666','test','1000',3),(5,2,2,'方便面','test','20',1),(6,3,2,'方便面','康师傅','5',5),(7,4,3,'农夫山泉','矿泉水','3',3),(8,2,3,'方便面','test','20',1),(9,3,3,'方便面','康师傅','5',5),(10,4,4,'农夫山泉','矿泉水','3',3),(11,2,4,'方便面','test','20',1),(12,3,4,'方便面','康师傅','5',5),(13,4,5,'农夫山泉','矿泉水','3',3),(14,2,5,'方便面','test','20',1),(15,3,5,'方便面','康师傅','5',5);
 
 #
 # Structure for table "UserOrder"
@@ -97,3 +98,4 @@ CREATE TABLE `UserOrder` (
 # Data for table "UserOrder"
 #
 
+INSERT INTO `UserOrder` VALUES (1,'3045','unPaid','2018-05-04','','','',1),(2,'3045','unPaid','2018-05-04','','','',1),(3,'54','unPaid','2018-05-04','','','',1),(4,'54','unPaid','2018-05-04','','','',1),(5,'54','unPaid','2018-05-04','','','',1);

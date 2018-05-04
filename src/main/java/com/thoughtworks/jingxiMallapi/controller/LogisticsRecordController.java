@@ -1,8 +1,11 @@
 package com.thoughtworks.jingxiMallapi.controller;
 
 import com.thoughtworks.jingxiMallapi.entity.LogisticsRecord;
+import com.thoughtworks.jingxiMallapi.entity.ProductSnap;
+import com.thoughtworks.jingxiMallapi.repository.InventoryRepository;
 import com.thoughtworks.jingxiMallapi.repository.LogisticsRecordRepository;
 import com.thoughtworks.jingxiMallapi.repository.OrderRepository;
+import com.thoughtworks.jingxiMallapi.repository.ProductSnapRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.http.HttpStatus;
@@ -10,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.sql.Date;
+import java.util.List;
 
 @RestController
 @EnableAutoConfiguration
@@ -19,6 +23,10 @@ public class LogisticsRecordController {
     private LogisticsRecordRepository logisticsRecordRepository;
     @Autowired
     private OrderRepository orderRepository;
+    @Autowired
+    private ProductSnapRepository productSnapRepository;
+    @Autowired
+    private InventoryRepository inventoryRepository;
 
     //根据订单id查找订单
     @RequestMapping(value = "/{id}", method = RequestMethod.GET)
@@ -46,13 +54,25 @@ public class LogisticsRecordController {
             }
             logisticsRecordRepository.updateLogisticsStatusWithShipping(id, orderId, nowDate);
         } else if (logisticsStatus.equals("signed")) {
+            if (logisticsRecord.getLogisticsStatus().equals("readyToShip")) {
+                return new ResponseEntity<>("The logisticsRecord hasn't been shipped yet.", HttpStatus.BAD_REQUEST);
+            }
             if (logisticsRecord.getLogisticsStatus().equals("signed")) {
                 return new ResponseEntity<>("The logisticsRecord has already been signed off.", HttpStatus.BAD_REQUEST);
             }
             logisticsRecordRepository.updateLogisticsStatusWithSigned(id, orderId, nowDate);
-            orderRepository.updateOrderStatusToFinished(id, "finished", nowDate);
-//            unlockInventoriesByOrderId(id);
+            orderRepository.updateOrderStatusToFinished(orderId, "finished", nowDate);
+            updateInventoriesAfterSignedOff(orderId);
         }
         return new ResponseEntity<>("success", HttpStatus.NO_CONTENT);
     }
+
+    private void updateInventoriesAfterSignedOff(Long orderId) {
+        List<ProductSnap> products = productSnapRepository.findProductSnapByOrderId(orderId);
+        for (ProductSnap product : products) {
+            inventoryRepository.updateCountById(product.getId(), -product.getPurchaseCount());
+            inventoryRepository.updateLockedCount(product.getId(), -product.getPurchaseCount());
+        }
+    }
+
 }
