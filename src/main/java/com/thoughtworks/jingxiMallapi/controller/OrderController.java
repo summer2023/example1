@@ -65,20 +65,6 @@ public class OrderController {
         return new ResponseEntity<UserOrder>(orderRepository.findUserOrderById(id), HttpStatus.NO_CONTENT);
     }
 
-    private Boolean isThisOrderAlreadyBeenPaidOrWithdrawnOrFinished(UserOrder order, String orderStatus) {
-        final boolean isBeenPaidOrWithdrawnOrFinished = order.getStatus().equals("paid") || order.getStatus().equals("withdrawn") || order.getStatus().equals("finished");
-        return (!orderStatus.equals("paid") || !isBeenPaidOrWithdrawnOrFinished) && (!orderStatus.equals("withdrawn") || !isBeenPaidOrWithdrawnOrFinished);
-    }
-
-    private void updateOrderStatusByInputState(Long id, String orderStatus) {
-        String nowDate = String.valueOf(new Date(System.currentTimeMillis()));
-        if (orderStatus.equals("paid")) {
-            orderRepository.updateOrderStatusWithPaid(id, orderStatus, nowDate);
-        } else if (orderStatus.equals("withdrawn")) {
-            orderRepository.updateOrderStatusToWithdrawn(id, orderStatus, nowDate);
-        }
-    }
-
     //根据订单id查找订单
     @RequestMapping(value = "/{id}", method = RequestMethod.GET)
     public ResponseEntity<?> getOrder(@PathVariable Long id) {
@@ -93,6 +79,20 @@ public class OrderController {
     @RequestMapping(method = RequestMethod.GET)
     public List<UserOrder> getUserOrders(@RequestParam Long userId) {
         return orderRepository.findByUserId(userId);
+    }
+
+    private void updateOrderStatusByInputState(Long id, String orderStatus) {
+        String nowDate = String.valueOf(new Date(System.currentTimeMillis()));
+        if (orderStatus.equals("paid")) {
+            orderRepository.updateOrderStatusWithPaid(id, orderStatus, nowDate);
+        } else if (orderStatus.equals("withdrawn")) {
+            orderRepository.updateOrderStatusToWithdrawn(id, orderStatus, nowDate);
+        }
+    }
+
+    private Boolean isThisOrderAlreadyBeenPaidOrWithdrawnOrFinished(UserOrder order, String orderStatus) {
+        final boolean isBeenPaidOrWithdrawnOrFinished = order.getStatus().equals("paid") || order.getStatus().equals("withdrawn") || order.getStatus().equals("finished");
+        return (!orderStatus.equals("paid") || !isBeenPaidOrWithdrawnOrFinished) && (!orderStatus.equals("withdrawn") || !isBeenPaidOrWithdrawnOrFinished);
     }
 
     private HttpHeaders setLocationInHeaders(Long orderId) {

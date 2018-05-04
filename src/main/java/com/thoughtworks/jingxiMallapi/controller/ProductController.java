@@ -30,10 +30,7 @@ public class ProductController {
             return new ResponseEntity<String>("Input product illegal!", HttpStatus.BAD_REQUEST);
         }
         Long id = productRepository.saveAndFlush(product).getId();
-        URI location = URI.create("http://192.168.56.1:8083/products/" + id);
-
-        HttpHeaders responseHeaders = new HttpHeaders();
-        responseHeaders.setLocation(location);
+        HttpHeaders responseHeaders = setLocationInResponseHeader(id);
         productRepository.save(product);
         inventoryRepository.saveByProductId(id);
         return new ResponseEntity<Product>(productRepository.findProductById(id), responseHeaders, HttpStatus.CREATED);
@@ -73,4 +70,10 @@ public class ProductController {
         }
     }
 
+    private HttpHeaders setLocationInResponseHeader(Long id) {
+        URI location = URI.create("http://192.168.56.1:8083/products/" + id);
+        HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.setLocation(location);
+        return responseHeaders;
+    }
 }
