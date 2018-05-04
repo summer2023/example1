@@ -1,6 +1,5 @@
 package com.thoughtworks.jingxiMallapi.entity;
 
-import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
 
