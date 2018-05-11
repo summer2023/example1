@@ -31,9 +31,8 @@ public class ProductController {
         if (product.getName() == null || product.getPrice() == null) {
             throw new InputProductInvalidException();
         }
-        Long id = productRepository.saveAndFlush(product).getId();
+        Long id = productRepository.save(product).getId();
         HttpHeaders responseHeaders = setLocationInResponseHeader(id);
-        productRepository.save(product);
         inventoryRepository.saveByProductId(id);
         return new ResponseEntity<Product>(productRepository.findProductById(id), responseHeaders, HttpStatus.CREATED);
     }
@@ -58,18 +57,11 @@ public class ProductController {
         }
         return product;
     }
-//    public ResponseEntity<?> getProduct(@PathVariable Long id) {
-//        Product product = productRepository.findProductById(id);
-//        if (product == null) {
-//            return new ResponseEntity<String>("Cannot find such product with input id.", HttpStatus.NOT_FOUND);
-//        }
-//        return new ResponseEntity<Product>(product, HttpStatus.OK);
-//    }
 
     //查找所有商品
     //根据name和描述模糊查询
     //根据name查询
-    @RequestMapping(method = RequestMethod.GET)
+    @GetMapping
     public List<Product> getProducts(@RequestParam(value = "name", required = false, defaultValue = "") String name, @RequestParam(value = "description", required = false, defaultValue = "") String description) {
         if (!name.isEmpty() && !description.isEmpty()) {
             return productRepository.findByNameAndDescriptionContaining(name, description);
