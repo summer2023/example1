@@ -33,7 +33,7 @@ public class OrderController {
 
     //创建新商品
     @PostMapping
-    public ResponseEntity<?> saveOrder(@RequestBody List<OrderMsg> orderMsg) throws Exception{
+    public ResponseEntity<?> saveOrder(@RequestBody List<OrderMsg> orderMsg) throws Exception {
         UserOrder order = new UserOrder();
         Long orderId = orderRepository.saveAndFlush(order).getId();
         String result = createProductSnaps(orderMsg, orderId);
@@ -50,7 +50,7 @@ public class OrderController {
     //修改订单状态
     @PutMapping("{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public UserOrder updateOrderStatus(@PathVariable Long id, @RequestParam(value = "orderStatus", required = false, defaultValue = "unPaid") String orderStatus) {
+    public UserOrder updateOrderStatus(@PathVariable Long id, @RequestParam(value = "orderStatus", required = false, defaultValue = "unPaid") String orderStatus) throws Exception{
         UserOrder order = orderRepository.findUserOrderById(id);
         if (order == null) {
             throw new ItemNotFoundException("order", id);
@@ -70,7 +70,7 @@ public class OrderController {
     //根据订单id查找订单
     @GetMapping("{id}")
     @ResponseStatus(HttpStatus.OK)
-    public UserOrder getOrder(@PathVariable Long id) {
+    public UserOrder getOrder(@PathVariable Long id) throws Exception{
         UserOrder order = orderRepository.findUserOrderById(id);
         if (order == null) {
             throw new ItemNotFoundException("product", id);
@@ -105,16 +105,14 @@ public class OrderController {
         return responseHeaders;
     }
 
-    private String createProductSnaps(List<OrderMsg> orderMsg, Long orderId) {
+    private String createProductSnaps(List<OrderMsg> orderMsg, Long orderId) throws ItemNotFoundException, InventoryOutOfBoundException {
         for (OrderMsg msg : orderMsg) {
             Product product = productRepository.findProductById(msg.getProductId());
             if (product == null) {
-//                return "Cannot find such product with input id: " + msg.getProductId();
                 throw new ItemNotFoundException("product", msg.getProductId());
             }
             Inventory inventory = inventoryRepository.findInventoryById(msg.getProductId());
             if (inventory.getCount() - inventory.getLockedCount() < msg.getPurchaseCount()) {
-//                return "There is insufficient inventory for the item which id is: " + msg.getProductId();
                 throw new InventoryOutOfBoundException(msg.getProductId());
             }
             ProductSnap productSnap = new ProductSnap(product.getId(), orderId, product.getName(), product.getDescription(), String.valueOf(product.getPrice()), msg.getPurchaseCount());

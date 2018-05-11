@@ -1,6 +1,8 @@
 package com.thoughtworks.jingxiMallapi.controller;
 
 import com.thoughtworks.jingxiMallapi.entity.Product;
+import com.thoughtworks.jingxiMallapi.exception.InputProductInvalidException;
+import com.thoughtworks.jingxiMallapi.exception.ItemNotFoundException;
 import com.thoughtworks.jingxiMallapi.repository.InventoryRepository;
 import com.thoughtworks.jingxiMallapi.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,10 +26,10 @@ public class ProductController {
     InventoryRepository inventoryRepository;
 
     //创建新商品
-    @RequestMapping(method = RequestMethod.POST)
-    public ResponseEntity<?> saveProduct(@RequestBody Product product) {
+    @PostMapping
+    public ResponseEntity<?> saveProduct(@RequestBody Product product) throws Exception {
         if (product.getName() == null || product.getPrice() == null) {
-            return new ResponseEntity<String>("Input product illegal!", HttpStatus.BAD_REQUEST);
+            throw new InputProductInvalidException();
         }
         Long id = productRepository.saveAndFlush(product).getId();
         HttpHeaders responseHeaders = setLocationInResponseHeader(id);
@@ -37,24 +39,32 @@ public class ProductController {
     }
 
     //修改商品信息
-    @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
-    public ResponseEntity<String> updateProduct(@PathVariable Long id, @RequestBody Product product) throws Exception {
+    @PutMapping("{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void updateProduct(@PathVariable Long id, @RequestBody Product product) throws Exception {
         if (productRepository.findProductById(id) == null) {
-            return new ResponseEntity<>("Cannot find such product with input id.", HttpStatus.NOT_FOUND);
+            throw new ItemNotFoundException("product", id);
         }
         productRepository.updateById(id, product.getName(), product.getDescription(), product.getPrice());
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     //根据商品id查找商品
-    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
-    public ResponseEntity<?> getProduct(@PathVariable Long id) {
+    @GetMapping("{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public Product getProduct(@PathVariable Long id) throws Exception {
         Product product = productRepository.findProductById(id);
         if (product == null) {
-            return new ResponseEntity<String>("Cannot find such product with input id.", HttpStatus.NOT_FOUND);
+            throw new ItemNotFoundException("product", id);
         }
-        return new ResponseEntity<Product>(product, HttpStatus.OK);
+        return product;
     }
+//    public ResponseEntity<?> getProduct(@PathVariable Long id) {
+//        Product product = productRepository.findProductById(id);
+//        if (product == null) {
+//            return new ResponseEntity<String>("Cannot find such product with input id.", HttpStatus.NOT_FOUND);
+//        }
+//        return new ResponseEntity<Product>(product, HttpStatus.OK);
+//    }
 
     //查找所有商品
     //根据name和描述模糊查询
