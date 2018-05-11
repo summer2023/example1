@@ -1,6 +1,9 @@
 package com.thoughtworks.jingxiMallapi.controller;
 
 import com.thoughtworks.jingxiMallapi.entity.*;
+import com.thoughtworks.jingxiMallapi.exception.InventoryOutOfBoundException;
+import com.thoughtworks.jingxiMallapi.exception.ItemNotFoundException;
+import com.thoughtworks.jingxiMallapi.exception.OrderStatusConflictException;
 import com.thoughtworks.jingxiMallapi.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -29,7 +32,7 @@ public class OrderController {
     private LogisticsRecordRepository logisticsRecordRepository;
 
     //创建新商品
-    @RequestMapping(method = RequestMethod.POST)
+    @PostMapping
     public ResponseEntity<?> saveOrder(@RequestBody List<OrderMsg> orderMsg) {
         UserOrder order = new UserOrder();
         Long orderId = orderRepository.saveAndFlush(order).getId();
@@ -47,14 +50,15 @@ public class OrderController {
     }
 
     //修改订单状态
-    @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
-    public ResponseEntity<?> updateOrderStatus(@PathVariable Long id, @RequestParam(value = "orderStatus", required = false, defaultValue = "unPaid") String orderStatus) {
+    @PutMapping("{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public UserOrder updateOrderStatus(@PathVariable Long id, @RequestParam(value = "orderStatus", required = false, defaultValue = "unPaid") String orderStatus) {
         UserOrder order = orderRepository.findUserOrderById(id);
         if (order == null) {
-            return new ResponseEntity<String>("Cannot find such order with input orderId.", HttpStatus.NOT_FOUND);
+            throw new ItemNotFoundException("order", id);
         }
         if (!isThisOrderAlreadyBeenPaidOrWithdrawnOrFinished(order, orderStatus)) {
-            return new ResponseEntity<String>("The order which id is " + id + " has already been " + order.getStatus(), HttpStatus.BAD_REQUEST);
+            throw new OrderStatusConflictException(id, order.getStatus());
         }
         if (orderStatus.equals("paid")) {
             createLogisticsRecord(id);
@@ -62,8 +66,24 @@ public class OrderController {
             unlockInventoriesByOrderId(id);
         }
         updateOrderStatusByInputState(id, orderStatus);
-        return new ResponseEntity<UserOrder>(orderRepository.findUserOrderById(id), HttpStatus.NO_CONTENT);
+        return orderRepository.findUserOrderById(id);
     }
+//    public ResponseEntity<?> updateOrderStatus(@PathVariable Long id, @RequestParam(value = "orderStatus", required = false, defaultValue = "unPaid") String orderStatus) {
+//        UserOrder order = orderRepository.findUserOrderById(id);
+//        if (order == null) {
+//            return new ResponseEntity<String>("Cannot find such order with input orderId.", HttpStatus.NOT_FOUND);
+//        }
+//        if (!isThisOrderAlreadyBeenPaidOrWithdrawnOrFinished(order, orderStatus)) {
+//            return new ResponseEntity<String>("The order which id is " + id + " has already been " + order.getStatus(), HttpStatus.BAD_REQUEST);
+//        }
+//        if (orderStatus.equals("paid")) {
+//            createLogisticsRecord(id);
+//        } else if (orderStatus.equals("withdrawn")) {
+//            unlockInventoriesByOrderId(id);
+//        }
+//        updateOrderStatusByInputState(id, orderStatus);
+//        return new ResponseEntity<UserOrder>(orderRepository.findUserOrderById(id), HttpStatus.NO_CONTENT);
+//    }
 
     //根据订单id查找订单
     @RequestMapping(value = "/{id}", method = RequestMethod.GET)
