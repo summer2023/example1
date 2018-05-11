@@ -3,6 +3,7 @@ package com.thoughtworks.jingxiMallapi.controller;
 import com.thoughtworks.jingxiMallapi.entity.LogisticsRecord;
 import com.thoughtworks.jingxiMallapi.entity.ProductSnap;
 import com.thoughtworks.jingxiMallapi.exception.ItemNotFoundException;
+import com.thoughtworks.jingxiMallapi.exception.LogisticsAlreadyShippedOrSignedException;
 import com.thoughtworks.jingxiMallapi.repository.InventoryRepository;
 import com.thoughtworks.jingxiMallapi.repository.LogisticsRecordRepository;
 import com.thoughtworks.jingxiMallapi.repository.OrderRepository;
@@ -32,44 +33,55 @@ public class LogisticsRecordController {
     //根据订单id查找物流
     @GetMapping("{id}")
     @ResponseStatus(HttpStatus.OK)
-    public LogisticsRecord getLogisticsRecord (@PathVariable Long id) throws Exception{
+    public LogisticsRecord getLogisticsRecord(@PathVariable Long id) throws Exception {
         LogisticsRecord logisticsRecord = logisticsRecordRepository.findLogisticsRecordById(id);
         if (logisticsRecord == null) {
             throw new ItemNotFoundException("logisticsRecord", id);
-        } else {
-            return logisticsRecord;
         }
+        return logisticsRecord;
     }
-//    public ResponseEntity<?> getLogisticsRecord(@PathVariable Long id) {
-//        LogisticsRecord logisticsRecord = logisticsRecordRepository.findLogisticsRecordById(id);
-//        if (logisticsRecord == null) {
-//            return new ResponseEntity<String>("Cannot find such logisticsRecord with input id: " + id, HttpStatus.NOT_FOUND);
-//        } else {
-//            return new ResponseEntity<LogisticsRecord>(logisticsRecord, HttpStatus.OK);
-//        }
-//    }
 
     //修改物流状态
-    @RequestMapping(value = "/{id}/orders/{orderId}", method = RequestMethod.PUT)
-    public ResponseEntity<String> updateOrderStatus(@PathVariable Long id, @PathVariable Long orderId, @RequestParam String logisticsStatus) {
+    @PutMapping("{id}/orders/{orderId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void updateOrderStatus(@PathVariable Long id, @PathVariable Long orderId, @RequestParam String logisticsStatus) throws Exception {
         LogisticsRecord logisticsRecord = logisticsRecordRepository.findLogisticsRecordByIdAndOrderId(id, orderId);
         String nowDate = String.valueOf(new Date(System.currentTimeMillis()));
         if (logisticsRecord == null) {
-            return new ResponseEntity<>("Cannot find such logisticsRecord with logisticsId: " + id + "and orderId: " + orderId, HttpStatus.NOT_FOUND);
+            throw new ItemNotFoundException("logisticsRecord", "logisticsId", id, "orderId", orderId);
         }
         final boolean isLogisticsAlreadyShippedOrSigned = logisticsRecord.getLogisticsStatus().equals("shipping") || logisticsRecord.getLogisticsStatus().equals("signed");
         if (logisticsStatus.equals("shipping") && isLogisticsAlreadyShippedOrSigned) {
-                return new ResponseEntity<>("The logisticsRecord which id is " + id + " is in the state of: " + logisticsRecord.getLogisticsStatus(), HttpStatus.BAD_REQUEST);
+            throw new LogisticsAlreadyShippedOrSignedException(id, logisticsRecord.getLogisticsStatus());
         } else if (logisticsStatus.equals("signed")) {
             String result = checkWhetherCanSignLogistics(logisticsRecord);
             if (!result.equals("success")) {
-                return new ResponseEntity<>(result, HttpStatus.BAD_REQUEST);
+               throw new LogisticsAlreadyShippedOrSignedException(result);
             }
             updateOrderStatusAndInventories(orderId, nowDate);
         }
-        updateLogisticsStatus(logisticsStatus,id, orderId, nowDate);
-        return new ResponseEntity<>("success", HttpStatus.NO_CONTENT);
+        updateLogisticsStatus(logisticsStatus, id, orderId, nowDate);
     }
+
+//    public ResponseEntity<String> updateOrderStatus(@PathVariable Long id, @PathVariable Long orderId, @RequestParam String logisticsStatus) {
+//        LogisticsRecord logisticsRecord = logisticsRecordRepository.findLogisticsRecordByIdAndOrderId(id, orderId);
+//        String nowDate = String.valueOf(new Date(System.currentTimeMillis()));
+//        if (logisticsRecord == null) {
+//            return new ResponseEntity<>("Cannot find such logisticsRecord with logisticsId: " + id + "and orderId: " + orderId, HttpStatus.NOT_FOUND);
+//        }
+//        final boolean isLogisticsAlreadyShippedOrSigned = logisticsRecord.getLogisticsStatus().equals("shipping") || logisticsRecord.getLogisticsStatus().equals("signed");
+//        if (logisticsStatus.equals("shipping") && isLogisticsAlreadyShippedOrSigned) {
+//            return new ResponseEntity<>("The logisticsRecord which id is " + id + " is in the state of: " + logisticsRecord.getLogisticsStatus(), HttpStatus.BAD_REQUEST);
+//        } else if (logisticsStatus.equals("signed")) {
+//            String result = checkWhetherCanSignLogistics(logisticsRecord);
+//            if (!result.equals("success")) {
+//                return new ResponseEntity<>(result, HttpStatus.BAD_REQUEST);
+//            }
+//            updateOrderStatusAndInventories(orderId, nowDate);
+//        }
+//        updateLogisticsStatus(logisticsStatus, id, orderId, nowDate);
+//        return new ResponseEntity<>("success", HttpStatus.NO_CONTENT);
+//    }
 
     private void updateOrderStatusAndInventories(Long orderId, String nowDate) {
         orderRepository.updateOrderStatusToFinished(orderId, "finished", nowDate);
