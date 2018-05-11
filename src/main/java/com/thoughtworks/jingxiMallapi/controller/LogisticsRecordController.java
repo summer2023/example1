@@ -2,6 +2,7 @@ package com.thoughtworks.jingxiMallapi.controller;
 
 import com.thoughtworks.jingxiMallapi.entity.LogisticsRecord;
 import com.thoughtworks.jingxiMallapi.entity.ProductSnap;
+import com.thoughtworks.jingxiMallapi.exception.ItemNotFoundException;
 import com.thoughtworks.jingxiMallapi.repository.InventoryRepository;
 import com.thoughtworks.jingxiMallapi.repository.LogisticsRecordRepository;
 import com.thoughtworks.jingxiMallapi.repository.OrderRepository;
@@ -28,16 +29,25 @@ public class LogisticsRecordController {
     @Autowired
     private InventoryRepository inventoryRepository;
 
-    //根据订单id查找订单
-    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
-    public ResponseEntity<?> getLogisticsRecord(@PathVariable Long id) {
+    //根据订单id查找物流
+    @GetMapping("{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public LogisticsRecord getLogisticsRecord (@PathVariable Long id) throws Exception{
         LogisticsRecord logisticsRecord = logisticsRecordRepository.findLogisticsRecordById(id);
         if (logisticsRecord == null) {
-            return new ResponseEntity<String>("Cannot find such logisticsRecord with input id: " + id, HttpStatus.NOT_FOUND);
+            throw new ItemNotFoundException("logisticsRecord", id);
         } else {
-            return new ResponseEntity<LogisticsRecord>(logisticsRecord, HttpStatus.OK);
+            return logisticsRecord;
         }
     }
+//    public ResponseEntity<?> getLogisticsRecord(@PathVariable Long id) {
+//        LogisticsRecord logisticsRecord = logisticsRecordRepository.findLogisticsRecordById(id);
+//        if (logisticsRecord == null) {
+//            return new ResponseEntity<String>("Cannot find such logisticsRecord with input id: " + id, HttpStatus.NOT_FOUND);
+//        } else {
+//            return new ResponseEntity<LogisticsRecord>(logisticsRecord, HttpStatus.OK);
+//        }
+//    }
 
     //修改物流状态
     @RequestMapping(value = "/{id}/orders/{orderId}", method = RequestMethod.PUT)
