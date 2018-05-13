@@ -34,10 +34,7 @@ public class LogisticsRecordController {
     @GetMapping("{id}")
     @ResponseStatus(HttpStatus.OK)
     public LogisticsRecord getLogisticsRecord(@PathVariable Long id) throws Exception {
-        LogisticsRecord logisticsRecord = logisticsRecordRepository.findLogisticsRecordById(id);
-        if (logisticsRecord == null) {
-            throw new ItemNotFoundException("logisticsRecord", id);
-        }
+        LogisticsRecord logisticsRecord = logisticsRecordRepository.findById(id).orElseThrow(() -> new ItemNotFoundException("logisticsRecord", id));
         return logisticsRecord;
     }
 

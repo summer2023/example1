@@ -15,7 +15,7 @@ public interface LogisticsRecordRepository extends JpaRepository<LogisticsRecord
     LogisticsRecord save(LogisticsRecord logisticsRecord);
 
     //根据物流订单Id查询订单
-    LogisticsRecord findLogisticsRecordById(Long id);
+//    LogisticsRecord findLogisticsRecordById(Long id);
 
     //根据物流Id和订单id查询订单
     LogisticsRecord findLogisticsRecordByIdAndOrderId(Long id, Long orderId);
