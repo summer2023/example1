@@ -13,7 +13,6 @@ public class Product {
     private Integer price;
 
     @OneToOne(cascade = CascadeType.REMOVE, fetch = FetchType.EAGER, mappedBy = "product")
-//    @JoinColumn(name = "id", insertable = false, updatable = false, unique = true)
     private Inventory inventory;
 
     public Product() {

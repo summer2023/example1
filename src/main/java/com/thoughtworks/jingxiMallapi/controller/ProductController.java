@@ -41,9 +41,7 @@ public class ProductController {
     @PutMapping("{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void updateProduct(@PathVariable Long id, @RequestBody Product product) throws Exception {
-        if (productRepository.findProductById(id) == null) {
-            throw new ItemNotFoundException("product", id);
-        }
+        productRepository.findById(id).orElseThrow(() -> new ItemNotFoundException("product", id));
         productRepository.updateById(id, product.getName(), product.getDescription(), product.getPrice());
     }
 
@@ -51,11 +49,7 @@ public class ProductController {
     @GetMapping("{id}")
     @ResponseStatus(HttpStatus.OK)
     public Product getProduct(@PathVariable Long id) throws Exception {
-        Product product = productRepository.findProductById(id);
-        if (product == null) {
-            throw new ItemNotFoundException("product", id);
-        }
-        return product;
+        return productRepository.findById(id).orElseThrow(() -> new ItemNotFoundException("product", id));
     }
 
     //查找所有商品
