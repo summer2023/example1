@@ -39,18 +39,17 @@ public class OrderController {
         String result = createProductSnaps(orderMsg, orderId);
         if (result.equals("success")) {
             order.setTotalPrice(countTotalPrice(orderId));
-            orderRepository.save(order);
             lockInventories(orderMsg);
         }
         HttpHeaders responseHeaders = setLocationInHeaders(orderId);
-        return new ResponseEntity<UserOrder>(orderRepository.findUserOrderById(orderId), responseHeaders, HttpStatus.CREATED);
+        return new ResponseEntity<UserOrder>(orderRepository.save(order), responseHeaders, HttpStatus.CREATED);
 
     }
 
     //修改订单状态
     @PutMapping("{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public UserOrder updateOrderStatus(@PathVariable Long id, @RequestParam(value = "orderStatus", required = false, defaultValue = "unPaid") String orderStatus) throws Exception{
+    public UserOrder updateOrderStatus(@PathVariable Long id, @RequestParam(value = "orderStatus", required = false, defaultValue = "unPaid") String orderStatus) throws Exception {
         UserOrder order = orderRepository.findById(id).orElseThrow(() -> new ItemNotFoundException("order", id));
         if (!isThisOrderAlreadyBeenPaidOrWithdrawnOrFinished(order, orderStatus)) {
             throw new OrderStatusConflictException(id, order.getStatus());
@@ -67,7 +66,7 @@ public class OrderController {
     //根据订单id查找订单
     @GetMapping("{id}")
     @ResponseStatus(HttpStatus.OK)
-    public UserOrder getOrder(@PathVariable Long id) throws Exception{
+    public UserOrder getOrder(@PathVariable Long id) throws Exception {
         return orderRepository.findById(id).orElseThrow(() -> new ItemNotFoundException("product", id));
     }
 
