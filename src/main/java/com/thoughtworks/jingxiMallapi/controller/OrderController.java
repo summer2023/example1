@@ -31,7 +31,7 @@ public class OrderController {
     @Autowired
     private LogisticsRecordRepository logisticsRecordRepository;
 
-    //创建新商品
+    //创建新订单
     @PostMapping
     public ResponseEntity<?> saveOrder(@RequestBody List<OrderMsg> orderMsg) throws Exception {
         UserOrder order = new UserOrder();
@@ -51,10 +51,7 @@ public class OrderController {
     @PutMapping("{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public UserOrder updateOrderStatus(@PathVariable Long id, @RequestParam(value = "orderStatus", required = false, defaultValue = "unPaid") String orderStatus) throws Exception{
-        UserOrder order = orderRepository.findUserOrderById(id);
-        if (order == null) {
-            throw new ItemNotFoundException("order", id);
-        }
+        UserOrder order = orderRepository.findById(id).orElseThrow(() -> new ItemNotFoundException("order", id));
         if (!isThisOrderAlreadyBeenPaidOrWithdrawnOrFinished(order, orderStatus)) {
             throw new OrderStatusConflictException(id, order.getStatus());
         }
@@ -71,12 +68,7 @@ public class OrderController {
     @GetMapping("{id}")
     @ResponseStatus(HttpStatus.OK)
     public UserOrder getOrder(@PathVariable Long id) throws Exception{
-        UserOrder order = orderRepository.findUserOrderById(id);
-        if (order == null) {
-            throw new ItemNotFoundException("product", id);
-        }
-        return order;
-
+        return orderRepository.findById(id).orElseThrow(() -> new ItemNotFoundException("product", id));
     }
 
     @GetMapping
@@ -107,10 +99,7 @@ public class OrderController {
 
     private String createProductSnaps(List<OrderMsg> orderMsg, Long orderId) throws ItemNotFoundException, InventoryOutOfBoundException {
         for (OrderMsg msg : orderMsg) {
-            Product product = productRepository.findProductById(msg.getProductId());
-            if (product == null) {
-                throw new ItemNotFoundException("product", msg.getProductId());
-            }
+            Product product = productRepository.findById(msg.getProductId()).orElseThrow(() -> new ItemNotFoundException("product", msg.getProductId()));
             Inventory inventory = inventoryRepository.findInventoryById(msg.getProductId());
             if (inventory.getCount() - inventory.getLockedCount() < msg.getPurchaseCount()) {
                 throw new InventoryOutOfBoundException(msg.getProductId());
