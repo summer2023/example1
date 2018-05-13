@@ -33,9 +33,7 @@ public class InventoryController {
     @PutMapping("{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void updateProduct(@PathVariable Long id, @RequestBody Inventory inventory) throws Exception {
-        if (inventoryRepository.findInventoryById(id) == null) {
-            throw new ItemNotFoundException("Inventory", id);
-        }
+        inventoryRepository.findById(id).orElseThrow(() -> new ItemNotFoundException("Inventory", id));
         inventoryRepository.updateCountById(id, inventory.getCount());
     }
 
