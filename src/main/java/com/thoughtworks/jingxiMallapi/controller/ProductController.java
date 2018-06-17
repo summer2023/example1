@@ -67,7 +67,7 @@ public class ProductController {
     }
 
     private HttpHeaders setLocationInResponseHeader(Long id) {
-        URI location = URI.create("http://192.168.56.1:8083/products/" + id);
+        URI location = URI.create("http://localhost:8083/products/" + id);
         HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.setLocation(location);
         return responseHeaders;
